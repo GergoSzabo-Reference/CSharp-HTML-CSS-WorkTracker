@@ -17,3 +17,6 @@ project reference
 appsettings.js -> ConnectionString for db
 
 program.cs -> dependency injection container: db config + swagger
+
+# database-migrations
+Add-Migration InitialCreate -> nuget manager console
