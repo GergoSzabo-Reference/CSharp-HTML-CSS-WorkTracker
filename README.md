@@ -20,3 +20,7 @@ program.cs -> dependency injection container: db config + swagger
 
 # database-migrations
 Add-Migration InitialCreate -> nuget manager console
+Update-Database
+
+# customer-crud-api
+UgyfelekController.cs -> CRUD api, get/getall/post/put/delete
