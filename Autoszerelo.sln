@@ -5,6 +5,10 @@ VisualStudioVersion = 17.12.35527.113 d17.12
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Autoszerelo_API", "Autoszerelo_API\Autoszerelo_API.csproj", "{BD6D7CBA-D1B8-42C9-8DAD-9C181B6C2BFB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Autoszerelo_UI", "Autoszerelo_UI\Autoszerelo_UI.csproj", "{D190B13A-DADD-48F8-929A-33BBAD13CD6D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Autoszerelo_Shared", "Autoszerelo_Shared\Autoszerelo_Shared.csproj", "{A33D6F1C-2193-415D-B658-52FB2AB7C4DE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +19,14 @@ Global
 		{BD6D7CBA-D1B8-42C9-8DAD-9C181B6C2BFB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BD6D7CBA-D1B8-42C9-8DAD-9C181B6C2BFB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BD6D7CBA-D1B8-42C9-8DAD-9C181B6C2BFB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D190B13A-DADD-48F8-929A-33BBAD13CD6D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D190B13A-DADD-48F8-929A-33BBAD13CD6D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D190B13A-DADD-48F8-929A-33BBAD13CD6D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D190B13A-DADD-48F8-929A-33BBAD13CD6D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A33D6F1C-2193-415D-B658-52FB2AB7C4DE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A33D6F1C-2193-415D-B658-52FB2AB7C4DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A33D6F1C-2193-415D-B658-52FB2AB7C4DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A33D6F1C-2193-415D-B658-52FB2AB7C4DE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
