@@ -87,3 +87,9 @@ UgyfelSzerkesztes.razor
 
 # blazor-delete-client
 UgyfelLista.razor
+
+# blazor-create-job
+UjMunka.razor
+MunkaLista.razor
+
+# blazor-edit-job
