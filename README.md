@@ -80,3 +80,7 @@ MunkaLista.razor
 # blazor-create-client
 UjUgyfel.razor
 UgyfelLista.razor
+
+# blazor-edit-client
+UjUgyfel.razor
+UgyfelSzerkesztes.razor
