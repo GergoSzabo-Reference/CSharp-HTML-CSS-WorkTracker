@@ -40,3 +40,9 @@ UgyfelekController.cs -> Get + DI
 # unit-tests
 Autoszerelo_UnitTests project
     -> WorkHourEstimationTests.cs
+
+# api-service-layer
+Interfaces -> IUgyfelService.cs
+Services -> UgyfelService.cs
+    - controllers should communicate through a service layer with the db
+Program.cs service registering

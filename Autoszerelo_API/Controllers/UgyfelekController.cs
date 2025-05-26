@@ -1,9 +1,10 @@
-﻿using Autoszerelo_API.Data;
-using Autoszerelo_API.Services;
+﻿//using Autoszerelo_API.Data;
+using Autoszerelo_API.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Autoszerelo.Shared;
 using Autoszerelo_Shared;
+using Autoszerelo_API.Services;
 
 namespace Autoszerelo_API.Controllers
 {
@@ -11,12 +12,12 @@ namespace Autoszerelo_API.Controllers
     [ApiController] // model validation errors, paramater binding source, errors msgs
     public class UgyfelekController : ControllerBase
     {
-        private readonly AutoszereloDbContext _context;
+        private readonly IUgyfelService _ugyfelService;
         private readonly WorkHourEstimationService _estimation_service;
 
-        public UgyfelekController(AutoszereloDbContext context, WorkHourEstimationService estimation_service) //DI
+        public UgyfelekController(IUgyfelService ugyfelService, WorkHourEstimationService estimation_service) //DI
         {
-            _context = context;
+            _ugyfelService = ugyfelService;
             _estimation_service = estimation_service;
         }
 
@@ -25,7 +26,7 @@ namespace Autoszerelo_API.Controllers
         public async Task<ActionResult<IEnumerable<Ugyfel>>> GetUgyfelek() 
         //ActionResult: return with HTTP codes
         {
-            var ugyfelek = await _context.Ugyfelek.ToListAsync(); //Async load table "Ugyfelek"
+            var ugyfelek = await _ugyfelService.GetUgyfelekAsync();
             return Ok(ugyfelek);
         }
 
@@ -33,7 +34,7 @@ namespace Autoszerelo_API.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<Ugyfel>> GetUgyfel(int id)
         {
-            var ugyfel = await _context.Ugyfelek.FindAsync(id);
+            var ugyfel = await _ugyfelService.GetUgyfelByIdAsync(id);
 
             if(ugyfel== null)
             {
@@ -47,29 +48,13 @@ namespace Autoszerelo_API.Controllers
         [HttpGet("{ugyfelId}/munkak")]
         public async Task<ActionResult<IEnumerable<Munka>>> GetMunkakUgyfelhez(int ugyfelId)
         {
-            if (!UgyfelExists(ugyfelId))
+            var ugyfel = await _ugyfelService.GetUgyfelByIdAsync(ugyfelId);
+            if (ugyfel == null)
             {
                 return NotFound($"Nem található ügyfél a megadott ID-vel: {ugyfelId}");
             }
 
-            var munkak = await _context.Munkak
-                .Where(m => m.UgyfelId == ugyfelId)
-                .ToListAsync();
-
-            if(munkak == null)
-            {
-                return NotFound("Nem találhatóak munkák az adott ügyfélhez.");
-            }
-
-            if(_estimation_service == null)
-            {
-                throw new InvalidOperationException("Nincs injektálva a WorkHoursEstimationService.");
-            }
-
-            foreach(var munka in munkak)
-            {
-                munka.BecsultMunkaorak = _estimation_service.CalculateEstimatedHours(munka);
-            }
+            var munkak = await _ugyfelService.GetMunkakByUgyfelIdAsync(ugyfelId);
 
             return Ok(munkak);
         }
@@ -85,10 +70,9 @@ namespace Autoszerelo_API.Controllers
 
             ugyfel.UgyfelId = 0;
 
-            _context.Ugyfelek.Add(ugyfel);
-            await _context.SaveChangesAsync();
+            var createdUgyfel = await _ugyfelService.CreateUgyfelAsync(ugyfel);
 
-            return CreatedAtAction(nameof(GetUgyfel), new { id = ugyfel.UgyfelId }, ugyfel); //201, created
+            return CreatedAtAction(nameof(GetUgyfel), new { id = createdUgyfel.UgyfelId }, createdUgyfel); //201, created
             //location header: new item's url
         }
 
@@ -106,21 +90,10 @@ namespace Autoszerelo_API.Controllers
                 return BadRequest(ModelState);
             }
 
-            _context.Entry(ugyfel).State = EntityState.Modified; //update sql | client already exists
-
-            try
+            var success = await _ugyfelService.UpdateUgyfelAsync(id, ugyfel);
+            if (!success)
             {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException) // someone else has already modified the given record
-            {
-                if (!UgyfelExists(id)){
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
+                return NotFound();
             }
 
             return NoContent(); //204
@@ -130,23 +103,19 @@ namespace Autoszerelo_API.Controllers
         [HttpDelete("{id}")]
         public async Task<ActionResult<Ugyfel>> DeleteUgyfel(int id)
         {
-            var ugyfel = await _context.Ugyfelek.FindAsync(id);
+            var success = await _ugyfelService.DeleteUgyfelAsync(id);
 
-            if(ugyfel == null)
+            if (!success)
             {
                 return NotFound();
             }
 
-            _context.Ugyfelek.Remove(ugyfel);
-
-            await _context.SaveChangesAsync();
-
             return NoContent(); // 204
         }
 
-        private bool UgyfelExists(int id)
+        /*private bool UgyfelExists(int id)
         {
-            return _context.Ugyfelek.Any(e => e.UgyfelId == id);
-        }
+            return _ugyfelService.Ugyfelek.Any(e => e.UgyfelId == id);
+        }*/
     }
 }
