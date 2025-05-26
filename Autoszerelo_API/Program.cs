@@ -17,6 +17,7 @@ builder.Services.AddDbContext<AutoszereloDbContext>(options =>
 //singleton: every http gets the same object
 builder.Services.AddScoped<WorkHourEstimationService>();
 builder.Services.AddScoped<IUgyfelService, UgyfelService>();
+builder.Services.AddScoped<IMunkaService, MunkaService>();
 
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi

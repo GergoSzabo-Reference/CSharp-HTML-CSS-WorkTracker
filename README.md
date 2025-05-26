@@ -46,3 +46,8 @@ Interfaces -> IUgyfelService.cs
 Services -> UgyfelService.cs
     - controllers should communicate through a service layer with the db
 Program.cs service registering
+
+# work-service-layer
+Interfaces -> IMunkaService.cs
+Services -> MunkaService.cs
+Program.cs service registering

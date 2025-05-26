@@ -13,12 +13,10 @@ namespace Autoszerelo_API.Controllers
     public class UgyfelekController : ControllerBase
     {
         private readonly IUgyfelService _ugyfelService;
-        private readonly WorkHourEstimationService _estimation_service;
 
-        public UgyfelekController(IUgyfelService ugyfelService, WorkHourEstimationService estimation_service) //DI
+        public UgyfelekController(IUgyfelService ugyfelService) //DI
         {
             _ugyfelService = ugyfelService;
-            _estimation_service = estimation_service;
         }
 
         //GET: api/Ugyfelek

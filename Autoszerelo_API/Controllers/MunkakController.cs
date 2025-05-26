@@ -3,6 +3,7 @@ using Autoszerelo_Shared;
 using Autoszerelo_API.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Autoszerelo_API.Interfaces;
 
 namespace Autoszerelo_API.Controllers
 {
@@ -10,25 +11,20 @@ namespace Autoszerelo_API.Controllers
     [ApiController]
     public class MunkakController : ControllerBase
     {
-        private readonly AutoszereloDbContext _context;
-        private readonly WorkHourEstimationService _estimationService;
+        private readonly AutoszereloDbContext _context = default!; //value will be 100% assigned = no warning
+        private readonly WorkHourEstimationService _estimationService = default!;
+        private readonly IMunkaService _munkaService;
 
-        public MunkakController(AutoszereloDbContext context, WorkHourEstimationService estimationService)
+        public MunkakController(IMunkaService munkaService)
         {
-            _context = context;
-            _estimationService = estimationService;
+            _munkaService = munkaService;
         }
 
         // GET: api/Munkak
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Munka>>> GetMunkak()
         {
-            var munkak = await _context.Munkak.ToListAsync();
-
-            foreach(var munka in munkak)
-            {
-                munka.BecsultMunkaorak = _estimationService.CalculateEstimatedHours(munka);
-            }
+            var munkak = await _munkaService.GetMunkakAsync();
 
             return Ok(munkak);
         }
@@ -40,14 +36,12 @@ namespace Autoszerelo_API.Controllers
             /*Munka contains UgyfelId
                 -> .Include(m => m.Ugyfel)
             */
-            var munka = await _context.Munkak.FindAsync(id);
 
-            if (munka == null)
+            var munka = await _munkaService.GetMunkaByIdAsync(id);
+            if(munka == null)
             {
                 return NotFound();
             }
-
-            munka.BecsultMunkaorak = _estimationService.CalculateEstimatedHours(munka);
 
             return Ok(munka);
         }
@@ -56,23 +50,20 @@ namespace Autoszerelo_API.Controllers
         [HttpPost]
         public async Task<ActionResult<Munka>> PostMunka([FromBody] Munka munka)
         {
-            if (!ModelState.IsValid)
+            if (!ModelState.IsValid) //after conversion from json, validations will be checked
             {
                 return BadRequest(ModelState); // 400
             }
 
-            var ugyfelLetezik = await _context.Ugyfelek.AnyAsync(u => u.UgyfelId == munka.UgyfelId);
-            if (!ugyfelLetezik)
+            try
             {
-                return BadRequest(new { message = $"Nem létezik ügyfél a megadott UgyfelId-vel: {munka.UgyfelId}" });
+                var createdMunka = await _munkaService.CreateMunkaAsync(munka);
+                return CreatedAtAction(nameof(GetMunka), new { id = createdMunka.MunkaId }, createdMunka); // 201
             }
-
-            munka.MunkaId = 0; // to handle as new one
-
-            _context.Munkak.Add(munka);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetMunka), new { id = munka.MunkaId }, munka); // 201
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         // PUT: api/Munkak/{id}
@@ -89,46 +80,30 @@ namespace Autoszerelo_API.Controllers
                 return BadRequest(ModelState);
             }
 
-            var ugyfelLetezik = await _context.Ugyfelek.AnyAsync(u => u.UgyfelId == munka.UgyfelId);
-            if (!ugyfelLetezik)
-            {
-                return BadRequest($"Nem létezik ügyfél a megadott ugyfelId-val: {munka.UgyfelId}");
-            }
-
-            _context.Entry(munka).State = EntityState.Modified;
-
             try
             {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!MunkaExists(id))
+                var success = await _munkaService.UpdateMunkaAsync(id, munka);
+                if (!success)
                 {
                     return NotFound();
                 }
-                else
-                {
-                    throw;
-                }
+                return NoContent();
             }
-
-            return NoContent(); //204
+            catch (ArgumentException e)
+            {
+                return BadRequest(e.Message);
+            }
         }
 
         // DELETE: api/Munkak/{id}
         [HttpDelete("id")]
         public async Task<ActionResult<Munka>> DeleteMunka(int id)
         {
-            var munka = await _context.Munkak.FindAsync(id);
-
-            if (munka == null)
+            var success = await _munkaService.DeleteMunkaAsync(id);
+            if (!success)
             {
                 return NotFound();
             }
-
-            _context.Munkak.Remove(munka);
-            await _context.SaveChangesAsync();
 
             return NoContent();
         }
