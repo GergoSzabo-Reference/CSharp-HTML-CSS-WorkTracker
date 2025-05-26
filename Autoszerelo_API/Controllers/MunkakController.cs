@@ -1,12 +1,8 @@
 ﻿using Autoszerelo_API.Data;
 using Autoszerelo_Shared;
-using Microsoft.AspNetCore.Mvc;
-
-using Autoszerelo.Shared;
-using Autoszerelo_API.Data;
+using Autoszerelo_API.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Mvc.ViewFeatures;
 
 namespace Autoszerelo_API.Controllers
 {
@@ -15,10 +11,12 @@ namespace Autoszerelo_API.Controllers
     public class MunkakController : ControllerBase
     {
         private readonly AutoszereloDbContext _context;
+        private readonly WorkHourEstimationService _estimationService;
 
-        public MunkakController(AutoszereloDbContext context)
+        public MunkakController(AutoszereloDbContext context, WorkHourEstimationService estimationService)
         {
             _context = context;
+            _estimationService = estimationService;
         }
 
         // GET: api/Munkak
@@ -26,6 +24,12 @@ namespace Autoszerelo_API.Controllers
         public async Task<ActionResult<IEnumerable<Munka>>> GetMunkak()
         {
             var munkak = await _context.Munkak.ToListAsync();
+
+            foreach(var munka in munkak)
+            {
+                munka.BecsultMunkaorak = _estimationService.CalculateEstimatedHours(munka);
+            }
+
             return Ok(munkak);
         }
 
@@ -42,6 +46,8 @@ namespace Autoszerelo_API.Controllers
             {
                 return NotFound();
             }
+
+            munka.BecsultMunkaorak = _estimationService.CalculateEstimatedHours(munka);
 
             return Ok(munka);
         }
