@@ -4,6 +4,7 @@ using Autoszerelo_API.Interfaces;
 using Microsoft.EntityFrameworkCore; //sqlserver
 
 var builder = WebApplication.CreateBuilder(args);
+var MyAllowSpecificOrigins = "_myAllowSpecificOrigins"; // Policy neve
 
 // Add services to the container.
 builder.Services.AddDbContext<AutoszereloDbContext>(options =>
@@ -18,6 +19,16 @@ builder.Services.AddDbContext<AutoszereloDbContext>(options =>
 builder.Services.AddScoped<WorkHourEstimationService>();
 builder.Services.AddScoped<IUgyfelService, UgyfelService>();
 builder.Services.AddScoped<IMunkaService, MunkaService>();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: MyAllowSpecificOrigins,
+                      policy =>
+                      {
+                          policy.WithOrigins("https://localhost:7090", "http://localhost:5191", "https://localhost:7168", "http://localhost:7168")
+                                .AllowAnyHeader()
+                                .AllowAnyMethod();
+                      });
+});
 
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -36,6 +47,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors(MyAllowSpecificOrigins);
 
 app.UseAuthorization();
 

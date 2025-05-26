@@ -66,3 +66,8 @@ Moq
 Felvett Munka -> Elvégzés alatt -> Befejezett
 MunkaService.cs -> UpdateMunkaAsync
 MunkakController.cs -> new exception
+
+# blazor-cllient-list
+Program.cs -> API uri change
+CORS -> Cross Origin Resource Sharing
+    -> Allow requests and running from different app

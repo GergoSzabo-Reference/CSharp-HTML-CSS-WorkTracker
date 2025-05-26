@@ -1,0 +1,61 @@
+﻿@page "/ugyfelek"
+@using Autoszerelo.Shared
+@inject HttpClient Http
+
+<PageTitle>Ügyfelek</PageTitle>
+
+<h1>Ügyfelek Listája</h1>
+
+@if (ugyfelek == null)
+{
+    <p><em>Adatok betöltése...</em></p>
+}
+else
+{
+    @if (!ugyfelek.Any())
+    {
+        <p>Nincsenek ügyfelek az adatbázisban.</p>
+    }
+    else
+    {
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Név</th>
+                    <th>Email</th>
+                    <th>Lakcím</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var ugyfel in ugyfelek)
+                {
+                    <tr>
+                        <td>@ugyfel.UgyfelId</td>
+                        <td>@ugyfel.Nev</td>
+                        <td>@ugyfel.Email</td>
+                        <td>@ugyfel.Lakcim</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+}
+
+@code {
+    private List<Ugyfel>? ugyfelek; // Nullable List<Ugyfel>
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // relative to HttpClient BaseAddress
+            ugyfelek = await Http.GetFromJsonAsync<List<Ugyfel>>("api/Ugyfelek");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Hiba az ügyfelek lekérdezése közben: {ex.Message}");
+            //UI exception handling...
+        }
+    }
+}
