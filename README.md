@@ -76,3 +76,7 @@ UgyfelLista.razor
 # blazor-workitem-list
 NavMenu.razor
 MunkaLista.razor
+
+# blazor-create-client
+UjUgyfel.razor
+UgyfelLista.razor
