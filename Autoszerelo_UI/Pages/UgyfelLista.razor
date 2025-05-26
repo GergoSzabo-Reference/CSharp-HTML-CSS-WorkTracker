@@ -1,6 +1,7 @@
 ﻿@page "/ugyfelek"
 @using Autoszerelo.Shared
 @inject HttpClient Http
+@inject IJSRuntime JSRuntime //confirm
 
 <PageTitle>Ügyfelek</PageTitle>
 
@@ -40,6 +41,9 @@ else
                             <a href="@($"ugyfelek/szerkeszt/{ugyfel.UgyfelId}")" class="btn btn-sm btn-outline-primary">
                                 Szerkesztés
                             </a>
+                            <button class="btn btn-sm btn-outline-danger ms-1" @onclick="() => ConfirmDeleteUgyfel(ugyfel)">
+                                Törlés
+                            </button>
                         </td>
                     </tr>
                 }
@@ -49,19 +53,64 @@ else
 }
 
 @code {
-    private List<Ugyfel>? ugyfelek; // Nullable List<Ugyfel>
+    private List<Ugyfel>? ugyfelek;
+    private string? errorMessage;
+    private string? successMessage;
 
     protected override async Task OnInitializedAsync()
     {
+        await LoadUgyfelek();
+    }
+
+    private async Task LoadUgyfelek()
+    {
+        errorMessage = null;
+        successMessage = null;
         try
         {
-            // relative to HttpClient BaseAddress
             ugyfelek = await Http.GetFromJsonAsync<List<Ugyfel>>("api/Ugyfelek");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Hiba az ügyfelek lekérdezése közben: {ex.Message}");
-            //UI exception handling...
+            errorMessage = $"Hiba az ügyfelek lekérdezése közben: {ex.Message}";
+            Console.WriteLine(errorMessage);
         }
+    }
+
+    private async Task ConfirmDeleteUgyfel(Ugyfel ugyfelToDelete)
+    {
+        bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm",
+            $"Biztosan törölni szeretné a következő ügyfelet: {ugyfelToDelete.Nev} (ID: {ugyfelToDelete.UgyfelId})?");
+
+        if (confirmed)
+        {
+            await DeleteUgyfel(ugyfelToDelete.UgyfelId);
+        }
+    }
+
+    private async Task DeleteUgyfel(int ugyfelId)
+    {
+        errorMessage = null;
+        successMessage = null;
+        try
+        {
+            var response = await Http.DeleteAsync($"api/Ugyfelek/{ugyfelId}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                successMessage = $"Ügyfél (ID: {ugyfelId}) sikeresen törölve.";
+                await LoadUgyfelek();
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                errorMessage = $"Hiba történt a törlés során (ID: {ugyfelId}): {response.ReasonPhrase}. Részletek: {errorContent}";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Váratlan hiba történt a törlés közben (ID: {ugyfelId}): {ex.Message}";
+        }
+        StateHasChanged();
     }
 }

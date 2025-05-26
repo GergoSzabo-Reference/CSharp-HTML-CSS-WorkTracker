@@ -84,3 +84,6 @@ UgyfelLista.razor
 # blazor-edit-client
 UjUgyfel.razor
 UgyfelSzerkesztes.razor
+
+# blazor-delete-client
+UgyfelLista.razor
