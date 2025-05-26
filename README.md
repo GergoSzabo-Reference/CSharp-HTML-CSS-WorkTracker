@@ -51,3 +51,7 @@ Program.cs service registering
 Interfaces -> IMunkaService.cs
 Services -> MunkaService.cs
 Program.cs service registering
+
+# client-service-tests
+Microsoft.EntityFrameworkCore.InMemory -> db in memory
+UgyfelServiceTests.cs
