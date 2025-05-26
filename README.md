@@ -24,3 +24,5 @@ Update-Database
 
 # customer-crud-api
 UgyfelekController.cs -> CRUD api, get/getall/post/put/delete
+
+# work-crud-api
