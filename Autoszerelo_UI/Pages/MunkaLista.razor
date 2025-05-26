@@ -1,0 +1,67 @@
+﻿@page "/munkak"
+@using Autoszerelo_Shared // A Munka modellhez
+@inject HttpClient Http
+
+<PageTitle>Munkák</PageTitle>
+
+<h1>Munkák Listája</h1>
+
+@if (munkak == null)
+{
+    <p><em>Adatok betöltése...</em></p>
+}
+else
+{
+    @if (!munkak.Any())
+    {
+        <p>Nincsenek munkák az adatbázisban.</p>
+    }
+    else
+    {
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Rendszám</th>
+                    <th>Ügyfél ID</th>
+                    <th>Kategória</th>
+                    <th>Állapot</th>
+                    <th>Hiba Leírása</th>
+                    <th>Becsült Óra</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var munka in munkak)
+                {
+                    <tr>
+                        <td>@munka.MunkaId</td>
+                        <td>@munka.Rendszam</td>
+                        <td>@munka.UgyfelId</td>
+                        <td>@munka.Kategoria</td>
+                        <td>@munka.Allapot</td>
+                        <td>@munka.HibaLeiras</td>
+                        <td>@munka.BecsultMunkaorak.ToString("0.00")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+}
+
+@code {
+    private List<Munka>? munkak;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Az API végpontja a munkák lekérdezésére (az HttpClient BaseAddress-hez képest)
+            munkak = await Http.GetFromJsonAsync<List<Munka>>("api/Munkak");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Hiba a munkák lekérdezése közben: {ex.Message}");
+            // Hibás esetben a munkak lista null marad
+        }
+    }
+}

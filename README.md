@@ -71,3 +71,8 @@ MunkakController.cs -> new exception
 Program.cs -> API uri change
 CORS -> Cross Origin Resource Sharing
     -> Allow requests and running from different app
+UgyfelLista.razor
+
+# blazor-workitem-list
+NavMenu.razor
+MunkaLista.razor
