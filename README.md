@@ -36,3 +36,7 @@ MunkakController.cs -> DI
 
 # listing-client-jobs
 UgyfelekController.cs -> Get + DI
+
+# unit-tests
+Autoszerelo_UnitTests project
+    -> WorkHourEstimationTests.cs
