@@ -12,7 +12,7 @@ namespace Autoszerelo_API.Controllers
     public class MunkakController : ControllerBase
     {
         private readonly AutoszereloDbContext _context = default!; //value will be 100% assigned = no warning
-        private readonly WorkHourEstimationService _estimationService = default!;
+        //private readonly WorkHourEstimationService _estimationService = default!;
         private readonly IMunkaService _munkaService;
 
         public MunkakController(IMunkaService munkaService)

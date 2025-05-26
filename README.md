@@ -55,3 +55,9 @@ Program.cs service registering
 # client-service-tests
 Microsoft.EntityFrameworkCore.InMemory -> db in memory
 UgyfelServiceTests.cs
+
+# work-service-tests
+In-Memory db
+real instance from WorkHourEstimationService
+mock IUgyfelService
+Moq
