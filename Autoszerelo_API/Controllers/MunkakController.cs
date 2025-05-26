@@ -93,6 +93,10 @@ namespace Autoszerelo_API.Controllers
             {
                 return BadRequest(e.Message);
             }
+            catch (InvalidOperationException ex) // invalid state changing
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         // DELETE: api/Munkak/{id}

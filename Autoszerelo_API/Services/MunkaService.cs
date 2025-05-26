@@ -63,7 +63,7 @@ namespace Autoszerelo_API.Services
         {
             if (id != munka.MunkaId)
             {
-                return false; // Vagy ArgumentException
+                return false; // or ArgumentException
             }
 
             var ugyfel = await _ugyfelService.GetUgyfelByIdAsync(munka.UgyfelId);
@@ -72,8 +72,45 @@ namespace Autoszerelo_API.Services
                 throw new ArgumentException($"Nem létezik ügyfél a megadott UgyfelId-vel: {munka.UgyfelId}");
             }
 
-            // TODO: Munka állapot (status) váltásának logikáját kezelni
-            // PDF: (Pl. "Felvett" -> "Elvégzés alatt")
+            var munkaJelenlegi = await _context.Munkak.AsNoTracking()
+                        .FirstOrDefaultAsync(m => m.MunkaId == id); //dont follow this EF instance
+
+            if (munkaJelenlegi == null)
+            {
+                return false;
+            }
+
+            if(munkaJelenlegi.Allapot != munka.Allapot)
+            {
+                bool validTransition = false;
+
+                switch (munkaJelenlegi.Allapot)
+                {
+                    case MunkaAllapot.Felvett:
+                        if(munka.Allapot == MunkaAllapot.ElvegzesAlatt)
+                        {
+                            validTransition = true;
+                        }
+                        break;
+                    case MunkaAllapot.ElvegzesAlatt:
+                        if(munka.Allapot == MunkaAllapot.Befejezett)
+                        {
+                            validTransition = true;
+                        }
+                        break;
+                    case MunkaAllapot.Befejezett:
+                        if(munka.Allapot == MunkaAllapot.Befejezett)
+                        {
+                            validTransition = true;
+                        }
+                        break;
+                }
+
+                if (!validTransition)
+                {
+                    throw new InvalidOperationException($"Érvénytelen állapotváltás: '{munkaJelenlegi.Allapot}' állapotról nem lehet '{munka.Allapot}' állapotra váltani.");
+                }
+            }
 
             _context.Entry(munka).State = EntityState.Modified;
             try

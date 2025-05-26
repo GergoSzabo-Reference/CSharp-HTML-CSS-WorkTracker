@@ -61,3 +61,8 @@ In-Memory db
 real instance from WorkHourEstimationService
 mock IUgyfelService
 Moq
+
+# work-status-logic
+Felvett Munka -> Elvégzés alatt -> Befejezett
+MunkaService.cs -> UpdateMunkaAsync
+MunkakController.cs -> new exception
