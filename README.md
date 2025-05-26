@@ -33,3 +33,6 @@ Services -> WorkHourEstimationService.cs
 Program.cs -> register new service in order for the controllers get the DI
 Munka.cs -> double BecsultMunkaorak
 MunkakController.cs -> DI
+
+# listing-client-jobs
+UgyfelekController.cs -> Get + DI

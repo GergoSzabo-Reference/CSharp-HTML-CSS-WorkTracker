@@ -1,7 +1,9 @@
 ﻿using Autoszerelo_API.Data;
+using Autoszerelo_API.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Autoszerelo.Shared;
+using Autoszerelo_Shared;
 
 namespace Autoszerelo_API.Controllers
 {
@@ -10,10 +12,12 @@ namespace Autoszerelo_API.Controllers
     public class UgyfelekController : ControllerBase
     {
         private readonly AutoszereloDbContext _context;
+        private readonly WorkHourEstimationService _estimation_service;
 
-        public UgyfelekController(AutoszereloDbContext context) //DI
+        public UgyfelekController(AutoszereloDbContext context, WorkHourEstimationService estimation_service) //DI
         {
             _context = context;
+            _estimation_service = estimation_service;
         }
 
         //GET: api/Ugyfelek
@@ -37,6 +41,37 @@ namespace Autoszerelo_API.Controllers
             }
 
             return Ok(ugyfel);
+        }
+
+        //GET: api/Ugyfelek/{ugyfelId}/Munkak
+        [HttpGet("{ugyfelId}/munkak")]
+        public async Task<ActionResult<IEnumerable<Munka>>> GetMunkakUgyfelhez(int ugyfelId)
+        {
+            if (!UgyfelExists(ugyfelId))
+            {
+                return NotFound($"Nem található ügyfél a megadott ID-vel: {ugyfelId}");
+            }
+
+            var munkak = await _context.Munkak
+                .Where(m => m.UgyfelId == ugyfelId)
+                .ToListAsync();
+
+            if(munkak == null)
+            {
+                return NotFound("Nem találhatóak munkák az adott ügyfélhez.");
+            }
+
+            if(_estimation_service == null)
+            {
+                throw new InvalidOperationException("Nincs injektálva a WorkHoursEstimationService.");
+            }
+
+            foreach(var munka in munkak)
+            {
+                munka.BecsultMunkaorak = _estimation_service.CalculateEstimatedHours(munka);
+            }
+
+            return Ok(munkak);
         }
 
         //POST: api/Ugyfelek
