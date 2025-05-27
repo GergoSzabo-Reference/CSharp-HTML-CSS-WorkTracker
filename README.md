@@ -95,3 +95,6 @@ MunkaLista.razor
 # blazor-edit-job
 MunkaLista.razor
 MunkaSzerkesztes.razor
+
+# blazor-delete-job
+MunkaLista.razor
