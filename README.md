@@ -98,3 +98,7 @@ MunkaSzerkesztes.razor
 
 # blazor-delete-job
 MunkaLista.razor
+
+# blazor-client-works-page
+UgyfelLista.razor
+UgyfelReszletek.razor
