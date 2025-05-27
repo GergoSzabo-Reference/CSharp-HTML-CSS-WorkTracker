@@ -1,0 +1,199 @@
+﻿@page "/munkak/szerkeszt/{MunkaId:int}"
+@using Autoszerelo.Shared
+@using Autoszerelo_Shared
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+
+<PageTitle>Munka Szerkesztése</PageTitle>
+
+<h3>Munka Szerkesztése (ID: @MunkaId)</h3>
+
+@if (munkaToEdit == null || ugyfelekForDropdown == null)
+{
+    if (notFound)
+    {
+        <p class="text-danger">A keresett munka (ID: @MunkaId) nem található.</p>
+        <button class="btn btn-secondary" @onclick="VisszaAMunkaListara">Vissza a listához</button>
+    }
+    else
+    {
+        <p><em>Adatok betöltése...</em></p>
+    }
+}
+else
+{
+    <EditForm Model="@munkaToEdit" OnValidSubmit="@HandleValidSubmitMunka">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-3">
+            <label for="ugyfel" class="form-label">Ügyfél:</label>
+            <InputSelect @bind-Value="munkaToEdit.UgyfelId" class="form-select" id="ugyfel">
+                <option value="0">Válasszon ügyfelet...</option>
+                @foreach (var ugyfel in ugyfelekForDropdown)
+                {
+                    <option value="@ugyfel.UgyfelId">@ugyfel.Nev (ID: @ugyfel.UgyfelId)</option>
+                }
+            </InputSelect>
+            <ValidationMessage For="@(() => munkaToEdit.UgyfelId)" />
+        </div>
+
+        <div class="mb-3">
+            <label for="rendszam" class="form-label">Rendszám:</label>
+            <InputText id="rendszam" @bind-Value="munkaToEdit.Rendszam" class="form-control" />
+            <ValidationMessage For="@(() => munkaToEdit.Rendszam)" />
+        </div>
+
+        <div class="mb-3">
+            <label for="gyartasiev" class="form-label">Gyártási Év:</label>
+            <InputNumber id="gyartasiev" @bind-Value="munkaToEdit.GyartasiEv" class="form-control" />
+            <ValidationMessage For="@(() => munkaToEdit.GyartasiEv)" />
+        </div>
+
+        <div class="mb-3">
+            <label for="kategoria" class="form-label">Kategória:</label>
+            <InputSelect @bind-Value="munkaToEdit.Kategoria" class="form-select" id="kategoria">
+                @foreach (var katValue in Enum.GetValues(typeof(MunkaKategoria)))
+                {
+                    <option value="@katValue">@katValue.ToString()</option>
+                }
+            </InputSelect>
+            <ValidationMessage For="@(() => munkaToEdit.Kategoria)" />
+        </div>
+
+        <div class="mb-3">
+            <label for="hibaleiras" class="form-label">Hiba Leírása:</label>
+            <InputTextArea id="hibaleiras" @bind-Value="munkaToEdit.HibaLeiras" class="form-control" />
+            <ValidationMessage For="@(() => munkaToEdit.HibaLeiras)" />
+        </div>
+
+        <div class="mb-3">
+            <label for="hibasulyossaga" class="form-label">Hiba Súlyossága (1-10):</label>
+            <InputNumber id="hibasulyossaga" @bind-Value="munkaToEdit.HibaSulyossaga" class="form-control" />
+            <ValidationMessage For="@(() => munkaToEdit.HibaSulyossaga)" />
+        </div>
+
+        <div class="mb-3">
+            <label for="allapot" class="form-label">Állapot:</label>
+            <InputSelect @bind-Value="munkaToEdit.Allapot" class="form-select" id="allapot">
+                @foreach (var allValue in Enum.GetValues(typeof(MunkaAllapot)))
+                {
+                    <option value="@allValue">@allValue.ToString()</option>
+                }
+            </InputSelect>
+            <ValidationMessage For="@(() => munkaToEdit.Allapot)" />
+        </div>
+
+        <button type="submit" class="btn btn-success" disabled="@isSaving">
+            @if (isSaving)
+            {
+                <span class="spinner-border spinner-border-sm"></span> <span>Mentés...</span>
+            }
+            else
+            {
+                <span>Módosítások Mentése</span>
+            }
+        </button>
+        <button type="button" class="btn btn-secondary" @onclick="VisszaAMunkaListara" disabled="@isSaving">Mégse</button>
+    </EditForm>
+}
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <p class="text-danger mt-3">@errorMessage</p>
+}
+@if (!string.IsNullOrWhiteSpace(successMessage))
+{
+    <p class="text-success mt-3">@successMessage</p>
+}
+
+@code {
+    [Parameter]
+    public int MunkaId { get; set; }
+
+    private Munka? munkaToEdit;
+    private List<Ugyfel>? ugyfelekForDropdown;
+    private bool isSaving = false;
+    private string? errorMessage;
+    private string? successMessage;
+    private bool notFound = false;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        try
+        {
+            ugyfelekForDropdown = await Http.GetFromJsonAsync<List<Ugyfel>>("api/Ugyfelek");
+
+            munkaToEdit = await Http.GetFromJsonAsync<Munka>($"api/Munkak/{MunkaId}");
+            if (munkaToEdit == null)
+            {
+                notFound = true;
+            }
+        }
+        catch (System.Net.Http.HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            notFound = true;
+            errorMessage = $"Munka (ID: {MunkaId}) vagy az ügyféllista nem található.";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Hiba az adatok betöltése közben: {ex.Message}";
+        }
+    }
+
+    private async Task HandleValidSubmitMunka()
+    {
+        errorMessage = null;
+        successMessage = null;
+        isSaving = true;
+        StateHasChanged();
+
+        if (munkaToEdit == null)
+        {
+            errorMessage = "Nincs munka kiválasztva a mentéshez.";
+            isSaving = false;
+            StateHasChanged();
+            return;
+        }
+        if (munkaToEdit.UgyfelId == 0)
+        {
+            errorMessage = "Kérem, válasszon ügyfelet a munkához!";
+            isSaving = false;
+            StateHasChanged();
+            return;
+        }
+
+        try
+        {
+            var response = await Http.PutAsJsonAsync($"api/Munkak/{MunkaId}", munkaToEdit);
+
+            if (response.IsSuccessStatusCode)
+            {
+                successMessage = "Munka adatai sikeresen módosítva!";
+                StateHasChanged();
+                await Task.Delay(2000);
+                NavigationManager.NavigateTo("/munkak");
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                errorMessage = $"Hiba történt a mentés során: {response.ReasonPhrase}. Részletek: {errorContent}";
+                // API: InvalidOperationException -> bad status change
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Váratlan hiba történt: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    private void VisszaAMunkaListara()
+    {
+        NavigationManager.NavigateTo("/munkak");
+    }
+}

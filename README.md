@@ -93,3 +93,5 @@ UjMunka.razor
 MunkaLista.razor
 
 # blazor-edit-job
+MunkaLista.razor
+MunkaSzerkesztes.razor
