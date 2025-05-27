@@ -1,0 +1,147 @@
+﻿@page "/ugyfelek/szerkeszt/{UgyfelId:int}"
+@using Autoszerelo.Shared
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+
+<PageTitle>Ügyfél Szerkesztése</PageTitle>
+
+<h3>Ügyfél Szerkesztése</h3>
+
+@if (ugyfelToEdit == null)
+{
+    if (notFound)
+    {
+        <p class="text-danger">A keresett ügyfél (ID: @UgyfelId) nem található.</p>
+        <button class="btn btn-secondary" @onclick="VisszaAListara">Vissza a listához</button>
+    }
+    else
+    {
+        <p><em>Adatok betöltése...</em></p>
+    }
+}
+else
+{
+    <EditForm Model="@ugyfelToEdit" OnValidSubmit="@HandleValidSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-3">
+            <label for="nev" class="form-label">Név:</label>
+            <InputText id="nev" @bind-Value="ugyfelToEdit.Nev" class="form-control" />
+            <ValidationMessage For="@(() => ugyfelToEdit.Nev)" />
+        </div>
+
+        <div class="mb-3">
+            <label for="email" class="form-label">Email cím:</label>
+            <InputText id="email" @bind-Value="ugyfelToEdit.Email" class="form-control" />
+            <ValidationMessage For="@(() => ugyfelToEdit.Email)" />
+        </div>
+
+        <div class="mb-3">
+            <label for="lakcim" class="form-label">Lakcím:</label>
+            <InputTextArea id="lakcim" @bind-Value="ugyfelToEdit.Lakcim" class="form-control" />
+            <ValidationMessage For="@(() => ugyfelToEdit.Lakcim)" />
+        </div>
+
+        <button type="submit" class="btn btn-success" disabled="@isSaving">
+            @if (isSaving)
+            {
+                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                <span> Mentés...</span>
+            }
+            else
+            {
+                <span>Módosítások Mentése</span>
+            }
+        </button>
+        <button type="button" class="btn btn-secondary" @onclick="VisszaAListara">Mégse</button>
+    </EditForm>
+}
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <p class="text-danger mt-3">@errorMessage</p>
+}
+@if (!string.IsNullOrWhiteSpace(successMessage))
+{
+    <p class="text-success mt-3">@successMessage</p>
+}
+
+@code {
+    [Parameter]
+    public int UgyfelId { get; set; } //from URL
+
+    private Ugyfel? ugyfelToEdit;
+    private string? errorMessage;
+    private string? successMessage;
+    private bool notFound = false;
+
+    private bool isSaving = false;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // load when ugyfelId is set
+        try
+        {
+            ugyfelToEdit = await Http.GetFromJsonAsync<Ugyfel>($"api/Ugyfelek/{UgyfelId}");
+            if (ugyfelToEdit == null)
+            {
+                notFound = true;
+            }
+        }
+        catch (System.Net.Http.HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            notFound = true;
+            errorMessage = $"Ügyfél (ID: {UgyfelId}) nem található.";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Hiba az ügyfél adatainak betöltése közben: {ex.Message}";
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        errorMessage = null;
+        successMessage = null;
+        isSaving = true;
+
+        if (ugyfelToEdit == null)
+        {
+            errorMessage = "Nincs ügyfél kiválasztva a mentéshez.";
+            return;
+        }
+
+        try
+        {
+            var response = await Http.PutAsJsonAsync($"api/Ugyfelek/{UgyfelId}", ugyfelToEdit);
+
+            if (response.IsSuccessStatusCode)
+            {
+                successMessage = "Ügyfél adatai sikeresen módosítva!";
+                StateHasChanged(); // update UI
+                await Task.Delay(1000);
+                NavigationManager.NavigateTo("/ugyfelek");
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                errorMessage = $"Hiba történt a mentés során: {response.ReasonPhrase}. Részletek: {errorContent}";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Váratlan hiba történt: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    private void VisszaAListara()
+    {
+        NavigationManager.NavigateTo("/ugyfelek");
+    }
+}

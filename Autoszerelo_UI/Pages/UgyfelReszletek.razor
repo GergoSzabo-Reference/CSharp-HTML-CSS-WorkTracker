@@ -1,0 +1,124 @@
+﻿@page "/ugyfelek/reszletek/{UgyfelId:int}"
+@using Autoszerelo.Shared
+@using Autoszerelo_Shared
+@inject HttpClient Http
+@inject NavigationManager NavManager
+
+<PageTitle>Ügyfél Részletei</PageTitle>
+
+@if (isLoading)
+{
+    <p><em>Adatok betöltése...</em></p>
+}
+else if (ugyfelDetails == null)
+{
+    <div class="alert alert-danger">Az ügyfél (ID: @UgyfelId) nem található.</div>
+    <button class="btn btn-link" @onclick="VisszaAzUgyfelListara">Vissza az ügyféllistához</button>
+}
+else
+{
+    <h3>Ügyfél Részletei: @ugyfelDetails.Nev</h3>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-3">Ügyfél ID:</dt>
+        <dd class="col-sm-9">@ugyfelDetails.UgyfelId</dd>
+
+        <dt class="col-sm-3">Név:</dt>
+        <dd class="col-sm-9">@ugyfelDetails.Nev</dd>
+
+        <dt class="col-sm-3">Email:</dt>
+        <dd class="col-sm-9">@ugyfelDetails.Email</dd>
+
+        <dt class="col-sm-3">Lakcím:</dt>
+        <dd class="col-sm-9">@ugyfelDetails.Lakcim</dd>
+    </dl>
+
+    <h4 class="mt-4">Kapcsolódó Munkák</h4>
+    @if (ugyfelMunkai == null || !ugyfelMunkai.Any())
+    {
+        <p><em>Ennek az ügyfélnek nincsenek rögzített munkái.</em></p>
+    }
+    else
+    {
+        <table class="table table-sm table-striped mt-2">
+            <thead>
+                <tr>
+                    <th>Munka ID</th>
+                    <th>Rendszám</th>
+                    <th>Kategória</th>
+                    <th>Állapot</th>
+                    <th>Hiba Leírása</th>
+                    <th>Becsült Óra</th>
+                    <th>Műveletek</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var munka in ugyfelMunkai)
+                {
+                    <tr>
+                        <td>@munka.MunkaId</td>
+                        <td>@munka.Rendszam</td>
+                        <td>@munka.Kategoria</td>
+                        <td>@munka.Allapot</td>
+                        <td>@munka.HibaLeiras</td>
+                        <td>@munka.BecsultMunkaorak.ToString("0.00")</td>
+                        <td>
+                            <a href="@($"munkak/szerkeszt/{munka.MunkaId}")" class="btn btn-sm btn-outline-primary">
+                                Munka szerkesztése
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    <hr />
+    <button class="btn btn-secondary" @onclick="VisszaAzUgyfelListara">Vissza az ügyféllistához</button>
+}
+
+
+@code {
+    [Parameter]
+    public int UgyfelId { get; set; }
+
+    private Ugyfel? ugyfelDetails;
+    private List<Munka>? ugyfelMunkai;
+    private string? errorMessage;
+    private bool isLoading = true;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        isLoading = true;
+        ugyfelDetails = null;
+        ugyfelMunkai = null;
+        errorMessage = null;
+
+        try
+        {
+            ugyfelDetails = await Http.GetFromJsonAsync<Ugyfel>($"api/Ugyfelek/{UgyfelId}");
+
+            if (ugyfelDetails != null)
+            {
+                ugyfelMunkai = await Http.GetFromJsonAsync<List<Munka>>($"api/Ugyfelek/{UgyfelId}/munkak");
+            }
+        }
+        catch (System.Net.Http.HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            Console.WriteLine($"Nem található ügyfél (ID: {UgyfelId}) vagy a hozzá tartozó munkák.");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Hiba történt az adatok betöltése közben: {ex.Message}";
+            Console.WriteLine(errorMessage);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void VisszaAzUgyfelListara()
+    {
+        NavManager.NavigateTo("/ugyfelek");
+    }
+}

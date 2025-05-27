@@ -1,0 +1,140 @@
+﻿@page "/munkak"
+@using Autoszerelo.Shared
+@using Autoszerelo_Shared
+@inject HttpClient Http
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+
+<PageTitle>Munkák</PageTitle>
+
+<h1>Munkák Listája</h1>
+<a href="/munkak/uj" class="btn btn-primary mb-3">Új munka felvétele</a>
+
+@if (!string.IsNullOrWhiteSpace(deleteSuccessMessage))
+{
+    <div class="alert alert-success" role="alert">
+        @deleteSuccessMessage
+    </div>
+}
+@if (!string.IsNullOrWhiteSpace(deleteErrorMessage))
+{
+    <div class="alert alert-danger" role="alert">
+        @deleteErrorMessage
+    </div>
+}
+
+@if (munkak == null)
+{
+    <p><em>Adatok betöltése...</em></p>
+}
+else
+{
+    @if (!munkak.Any())
+    {
+        <p>Nincsenek munkák az adatbázisban.</p>
+    }
+    else
+    {
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Rendszám</th>
+                    <th>Ügyfél ID</th>
+                    <th>Kategória</th>
+                    <th>Állapot</th>
+                    <th>Hiba Leírása</th>
+                    <th>Becsült Óra</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var munka in munkak)
+                {
+                    <tr>
+                        <td>@munka.MunkaId</td>
+                        <td>@munka.Rendszam</td>
+                        <td>@munka.UgyfelId</td>
+                        <td>@munka.Kategoria</td>
+                        <td>@munka.Allapot</td>
+                        <td>@munka.HibaLeiras</td>
+                        <td>@munka.BecsultMunkaorak.ToString("0.00")</td>
+                        <td>
+                            <a href="@($"munkak/szerkeszt/{munka.MunkaId}")" class="btn btn-sm btn-outline-primary">
+                                Szerkesztés
+                            </a>
+                            <button class="btn btn-sm btn-outline-danger ms-1" @onclick="() => ConfirmDeleteMunka(munka)">
+                                Törlés
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+}
+
+@code {
+    private List<Munka>? munkak;
+    private string? initialLoadErrorMessage;
+    private string? deleteSuccessMessage;
+    private string? deleteErrorMessage;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadMunkak();
+    }
+
+    private async Task LoadMunkak()
+    {
+        initialLoadErrorMessage = null;
+        try
+        {
+            munkak = await Http.GetFromJsonAsync<List<Munka>>("api/Munkak");
+        }
+        catch (Exception ex)
+        {
+            initialLoadErrorMessage = $"Hiba a munkák lekérdezése közben: {ex.Message}";
+            Console.WriteLine(initialLoadErrorMessage);
+        }
+        StateHasChanged();
+    }
+
+    private async Task ConfirmDeleteMunka(Munka munkaToDelete)
+    {
+        deleteSuccessMessage = null;
+        deleteErrorMessage = null;
+
+        bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
+            new object[] { $"Biztosan törölni szeretné a következő munkát? (ID: {munkaToDelete.MunkaId}, Rendszám: {munkaToDelete.Rendszam})" });
+
+        if (confirmed)
+        {
+            await DeleteMunkaInternal(munkaToDelete.MunkaId);
+        }
+        StateHasChanged();
+    }
+
+    private async Task DeleteMunkaInternal(int munkaId)
+    {
+        try
+        {
+            var response = await Http.DeleteAsync($"api/Munkak/{munkaId}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                deleteSuccessMessage = $"Munka (ID: {munkaId}) sikeresen törölve.";
+                await LoadMunkak(); 
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                deleteErrorMessage = $"Hiba történt a munka (ID: {munkaId}) törlése során: {response.ReasonPhrase}. Részletek: {errorContent}";
+            }
+        }
+        catch (Exception ex)
+        {
+            deleteErrorMessage = $"Váratlan hiba történt a munka (ID: {munkaId}) törlése közben: {ex.Message}";
+        }
+    }
+}

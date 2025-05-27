@@ -1,0 +1,119 @@
+﻿@page "/ugyfelek"
+@using Autoszerelo.Shared
+@inject HttpClient Http
+@inject IJSRuntime JSRuntime //confirm
+
+<PageTitle>Ügyfelek</PageTitle>
+
+<h1>Ügyfelek Listája</h1>
+<a href="/ugyfelek/uj" class="btn btn-primary mb-3">Új ügyfél felvétele</a>
+
+@if (ugyfelek == null)
+{
+    <p><em>Adatok betöltése...</em></p>
+}
+else
+{
+    @if (!ugyfelek.Any())
+    {
+        <p>Nincsenek ügyfelek az adatbázisban.</p>
+    }
+    else
+    {
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Név</th>
+                    <th>Email</th>
+                    <th>Lakcím</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var ugyfel in ugyfelek)
+                {
+                    <tr>
+                        <td>@ugyfel.UgyfelId</td>
+                        <td>@ugyfel.Nev</td>
+                        <td>@ugyfel.Email</td>
+                        <td>@ugyfel.Lakcim</td>
+                        <td>
+                            <a href="@($"ugyfelek/szerkeszt/{ugyfel.UgyfelId}")" class="btn btn-sm btn-outline-primary">
+                                Szerkesztés
+                            </a>
+                            <button class="btn btn-sm btn-outline-danger ms-1" @onclick="() => ConfirmDeleteUgyfel(ugyfel)">
+                                Törlés
+                            </button>
+                            <a href="@($"ugyfelek/reszletek/{ugyfel.UgyfelId}")" class="btn btn-sm btn-outline-info ms-1">
+                                Részletek/Munkái
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+}
+
+@code {
+    private List<Ugyfel>? ugyfelek;
+    private string? errorMessage;
+    private string? successMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUgyfelek();
+    }
+
+    private async Task LoadUgyfelek()
+    {
+        errorMessage = null;
+        successMessage = null;
+        try
+        {
+            ugyfelek = await Http.GetFromJsonAsync<List<Ugyfel>>("api/Ugyfelek");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Hiba az ügyfelek lekérdezése közben: {ex.Message}";
+            Console.WriteLine(errorMessage);
+        }
+    }
+
+    private async Task ConfirmDeleteUgyfel(Ugyfel ugyfelToDelete)
+    {
+        bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm",
+            $"Biztosan törölni szeretné a következő ügyfelet: {ugyfelToDelete.Nev} (ID: {ugyfelToDelete.UgyfelId})?");
+
+        if (confirmed)
+        {
+            await DeleteUgyfel(ugyfelToDelete.UgyfelId);
+        }
+    }
+
+    private async Task DeleteUgyfel(int ugyfelId)
+    {
+        errorMessage = null;
+        successMessage = null;
+        try
+        {
+            var response = await Http.DeleteAsync($"api/Ugyfelek/{ugyfelId}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                successMessage = $"Ügyfél (ID: {ugyfelId}) sikeresen törölve.";
+                await LoadUgyfelek();
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                errorMessage = $"Hiba történt a törlés során (ID: {ugyfelId}): {response.ReasonPhrase}. Részletek: {errorContent}";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Váratlan hiba történt a törlés közben (ID: {ugyfelId}): {ex.Message}";
+        }
+        StateHasChanged();
+    }
+}

@@ -1,0 +1,103 @@
+﻿@page "/ugyfelek/uj"
+@using Autoszerelo.Shared
+@inject HttpClient Http
+@inject NavigationManager NavigationManager // Navigációhoz
+
+<PageTitle>Új Ügyfél</PageTitle>
+
+<h3>Új Ügyfél Felvétele</h3>
+
+<EditForm Model="@ujUgyfel" OnValidSubmit="@HandleValidSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label for="nev" class="form-label">Név:</label>
+        <InputText id="nev" @bind-Value="ujUgyfel.Nev" class="form-control" />
+        <ValidationMessage For="@(() => ujUgyfel.Nev)" />
+    </div>
+
+    <div class="mb-3">
+        <label for="email" class="form-label">Email cím:</label>
+        <InputText id="email" @bind-Value="ujUgyfel.Email" class="form-control" />
+        <ValidationMessage For="@(() => ujUgyfel.Email)" />
+    </div>
+
+    <div class="mb-3">
+        <label for="lakcim" class="form-label">Lakcím:</label>
+        <InputTextArea id="lakcim" @bind-Value="ujUgyfel.Lakcim" class="form-control" />
+        <ValidationMessage For="@(() => ujUgyfel.Lakcim)" />
+    </div>
+
+    <button type="submit" class="btn btn-success" disabled="@isSaving">
+        @if (isSaving)
+        {
+            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+            <span> Mentés...</span>
+        }
+        else
+        {
+            <span>Módosítások Mentése</span>
+        }
+    </button>
+    <button type="button" class="btn btn-secondary" @onclick="IranyAtUgyfelListara">Mégse</button>
+</EditForm>
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <p class="text-danger mt-3">@errorMessage</p>
+}
+@if (!string.IsNullOrWhiteSpace(successMessage))
+{
+    <p class="text-success mt-3">@successMessage</p>
+}
+
+
+@code {
+    private Ugyfel ujUgyfel = new Ugyfel();
+    private string? errorMessage;
+    private string? successMessage;
+
+    private bool isSaving = false;
+
+
+    private async Task HandleValidSubmit()
+    {
+        errorMessage = null;
+        successMessage = null;
+        isSaving = true;
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/Ugyfelek", ujUgyfel); //serialize
+
+            if (response.IsSuccessStatusCode)
+            {
+                successMessage = "Ügyfél sikeresen létrehozva!";
+                StateHasChanged(); // update UI
+                await Task.Delay(1000);
+                NavigationManager.NavigateTo("/ugyfelek");
+            }
+            else
+            {
+                //read err message from API response
+                var errorContent = await response.Content.ReadAsStringAsync();
+                errorMessage = $"Hiba történt a mentés során: {response.ReasonPhrase}. Részletek: {errorContent}";
+                // !ModelState.IsValid
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Váratlan hiba történt: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    private void IranyAtUgyfelListara()
+    {
+        NavigationManager.NavigateTo("/ugyfelek");
+    }
+}
